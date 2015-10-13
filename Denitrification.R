@@ -107,7 +107,7 @@ arrows(x0 = bp_plot, y0 = sed.eff.c[,3], y1 = sed.eff.c[,3] - sed.eff.c[,4],
 arrows(x0 = bp_plot, y0 = sed.eff.c[,3], y1 = sed.eff.c[,3] + sed.eff.c[,4],
        angle = 90, length=0.1, lwd = 2)
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
-mtext(c("Downstream\nSeep", "Stream\Middle", "Culvert\n"), side = 1, at=bp_plot[c(1, 2, 3)],
+mtext(c("Downstream\nSeep", "Stream\nMiddle", "Culvert\n"), side = 1, at=bp_plot[c(1, 2, 3)],
       line = 2, cex=1.5, adj=0.5)
 
 dev.off() # this writes plot to folder
@@ -152,17 +152,19 @@ png(filename="./figures/WaterDenitrEff.png",
 
 par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
 bp_plot <- barplot(wtr.eff.c[,3], ylab = "Denitification Efficiency\n(Total N2 - N20/Total N2)",
-                   ylim = c(0, 1600), lwd=3, yaxt="n", col="gray",
-                   cex.lab=1.5, cex.names = 1.25, xlim = c(0.5,9.5),
-                   space = c(1, 0.25, 1, 0.25, 1, 0.25),
-                   density=c(-1, 15, -1, 15, -1, 15))
+                   lwd=3, yaxt="n", col="gray",
+                   cex.lab=1.5, cex.names = 1.25,
+                   space = c(1, 0.25, 1, 0.25, 1, 0.25, 1, 0.25, 1, 1),
+                   density=c(-1, 15, -1, 15, -1, 15, -1, 15, 15, 15))
 arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] - wtr.eff.c[,4], angle = 90,
        length=0.1, lwd = 2)
 arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] + wtr.eff.c[,4], angle = 90,
        length=0.1, lwd = 2)
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
-mtext(c("Tar River\nOutflow", "Downstream\nSeep", "Stream\nMiddle", "Culvert\n", "Upstream\nCulvert", "Upstream\nInflow"), side = 1, at=c(2.125, 5.375, 8.625),
-      line = 2, cex=1.5, adj=0.5)
+mtext(c("Tar River\nOutflow", "Downstream\nSeep", "Stream\nMiddle", "Culvert\n",
+        "Upstream\nCulvert", "Upstream\nInflow"),
+      side = 1, at=c(2, 4, 5, 8.5, 12, 14.5, 16.5),
+      line = 2, cex=0.8, adj=0.5)
 legend("topright", c("Baseline", "Storm"), fill="gray", bty="n", cex=1.25,
        density=c(-1, 15))
 
