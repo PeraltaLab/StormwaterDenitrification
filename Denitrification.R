@@ -16,6 +16,50 @@ require("reshape")
 dat <- read.delim("./data/2015_TC_DEA.txt")
 dat$Replicate <- as.factor(dat$Replicate)
 
+#All Samples - Denitrification
+dat.all <- dat[dat$Type]
+
+# Calculate Rate
+dat.all$Rate <- rep(NA, dim(dat.all)[1])
+for (i in 1:dim(dat.all)[1]){
+  if (all(is.na(dat.all[i,7:10]))){
+    next
+  } else {
+    model <- lm(as.numeric(dat.all[i,7:10]) ~ c(0:3))
+    B <- round(as.numeric(model$coefficients[2]), 3)
+    dat.all$Rate[i] <- B
+  }}
+
+
+dat.all.m <- melt(dat.all)
+dat.all.c <- cast(data = dat.all.m, Location + Time ~ variable, c(mean, se), na.rm=T)
+
+dat.all.c <- as.data.frame(dat.all.c)
+
+# Plot
+png(filename="./figures/WaterDenitrification.png",
+    width = 1600, height = 1200, res = 96*2)
+
+par(mar=c(2,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+bp_plot <- barplot(wtr.eff.c[,3], ylab = "Denitification Efficiency/n(N2)",
+                   ylim = c(0, 1.1), lwd=3, yaxt="n", col="gray",
+                   cex.lab=1.5, cex.names = 1.25,
+                   space = c(1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 1))
+arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] - wtr.eff.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] + wtr.eff.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
+mtext(levels(wtr.eff.c$Location), side = 1, at=bp_plot[c(1, 3, 5, 7, 9, 10)],
+      line = 1, cex=1.5, adj=0)
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
+
+
+
+
+
 
 # Sediment Denitrification
 dat.sed <- dat[dat$Type != "W", ]
@@ -61,7 +105,7 @@ arrows(x0 = bp_plot, y0 = sed.eff.c[,3], y1 = sed.eff.c[,3] - sed.eff.c[,4],
 arrows(x0 = bp_plot, y0 = sed.eff.c[,3], y1 = sed.eff.c[,3] + sed.eff.c[,4],
        angle = 90, length=0.1, lwd = 2)
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
-mtext(c("Downstream\nSeep", "Stream\nMiddle", "Culvert\n"), side = 1, at=bp_plot[c(1, 2, 3)],
+mtext(c("Downstream\nSeep", "Stream\Middle", "Culvert\n"), side = 1, at=bp_plot[c(1, 2, 3)],
       line = 2, cex=1.5, adj=0.5)
 
 dev.off() # this writes plot to folder
