@@ -193,4 +193,7 @@ mtext(levels(wtr.eff.c$Location), side = 1, at=bp_plot[c(1, 3, 5, 7, 9, 10)],
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 
+layout(matrix(c(1,2, 3), 1, 3, byrow = TRUE), widths = c(2, 2, 2))
+## show the regions that have been allocated to each plot
+layout.show(3)
 
