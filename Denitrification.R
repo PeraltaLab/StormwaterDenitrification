@@ -17,7 +17,7 @@ dat <- read.delim("./data/2015_TC_DEA.txt")
 dat$Replicate <- as.factor(dat$Replicate)
 
 #All Samples - Denitrification
-dat.all <- dat[dat$Type]
+dat.all <- dat[dat$acetyleneb == "+", ]
 
 # Calculate Rate
 dat.all$Rate <- rep(NA, dim(dat.all)[1])
@@ -31,8 +31,8 @@ for (i in 1:dim(dat.all)[1]){
   }}
 
 
-dat.all.m <- melt(dat.all)
-dat.all.c <- cast(data = dat.all.m, Location + Time ~ variable, c(mean, se), na.rm=T)
+dat.all.m <- melt(dat.all, id.vars = c("Location", "Type", "Time"), measure.vars = "Rate")
+dat.all.c <- cast(data = dat.all.m[dat.all.m$Type != "W" & dat.all.m$Type == "BK", ], Location  ~ variable, c(mean, se), na.rm=T)
 
 dat.all.c <- as.data.frame(dat.all.c)
 
@@ -41,7 +41,7 @@ png(filename="./figures/WaterDenitrification.png",
     width = 1600, height = 1200, res = 96*2)
 
 par(mar=c(2,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
-bp_plot <- barplot(wtr.eff.c[,3], ylab = "Denitification Efficiency/n(N2)",
+bp_plot <- barplot(dat.all.c[,3], ylab = "Denitification Efficiency/n(N2)",
                    ylim = c(0, 1.1), lwd=3, yaxt="n", col="gray",
                    cex.lab=1.5, cex.names = 1.25,
                    space = c(1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 1))
