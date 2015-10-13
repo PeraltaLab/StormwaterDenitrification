@@ -63,10 +63,6 @@ dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 
 
-
-
-
-
 # Sediment Denitrification
 dat.sed <- dat[dat$Type != "W", ]
 
@@ -120,7 +116,7 @@ graphics.off() # shuts down open devices
 
 
 
-# Water Denitrification Figure
+# Water Denitrification Figure - NOT WORKING YET
 dat.water <- dat[dat$Type == "W", ]
 
 # Calculate Rate
@@ -150,10 +146,32 @@ wtr.eff.c <- cast(data = wtr.eff.m, Location + Time ~ variable, c(mean, se), na.
 
 wtr.eff.c <- as.data.frame(wtr.eff.c)
 
-
-
-
 # Plot
+png(filename="./figures/WaterDenitrEff.png",
+    width = 1200, height = 800, res = 96*2)
+
+par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+bp_plot <- barplot(wtr.eff.c[,3], ylab = "Denitification Efficiency\n(Total N2 - N20/Total N2)",
+                   ylim = c(0, 1600), lwd=3, yaxt="n", col="gray",
+                   cex.lab=1.5, cex.names = 1.25, xlim = c(0.5,9.5),
+                   space = c(1, 0.25, 1, 0.25, 1, 0.25),
+                   density=c(-1, 15, -1, 15, -1, 15))
+arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] - wtr.eff.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] + wtr.eff.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
+mtext(c("Tar River\nOutflow", "Downstream\nSeep", "Stream\nMiddle", "Culvert\n", "Upstream\nCulvert", "Upstream\nInflow"), side = 1, at=c(2.125, 5.375, 8.625),
+      line = 2, cex=1.5, adj=0.5)
+legend("topright", c("Baseline", "Storm"), fill="gray", bty="n", cex=1.25,
+       density=c(-1, 15))
+
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
+
+
+# GENERIC Plot
 png(filename="./figures/WaterDenitrification.png",
     width = 1600, height = 1200, res = 96*2)
 
