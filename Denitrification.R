@@ -40,7 +40,7 @@ dat.all.c <- as.data.frame(dat.all.c)
 
 # Plot
 png(filename="./figures/SedDenitRate.png",
-    width = 1600, height = 1200, res = 96*2)
+    width = 1200, height = 800, res = 96*2)
 
 par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
 bp_plot <- barplot(dat.all.c[,3], ylab = "Denitification Rate\n()",
