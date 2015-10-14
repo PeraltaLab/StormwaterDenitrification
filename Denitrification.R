@@ -177,18 +177,23 @@ graphics.off() # shuts down open devices
 png(filename="./figures/WaterDenitrification.png",
     width = 1600, height = 1200, res = 96*2)
 
+xvars <- c(0.8, 1.2, 1.8, 2.2, 2.8, 3.2, 3.8, 4.2, 4.8, 5.4)
+
 par(mar=c(2,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
-bp_plot <- barplot(wtr.eff.c[,3], ylab = "Denitification Efficiency/n(N2)",
-                   ylim = c(0, 1.1), lwd=3, yaxt="n", col="gray",
-                   cex.lab=1.5, cex.names = 1.25,
-                   space = c(1, 0.2, 1, 0.2, 1, 0.2, 1, 0.2, 1, 1))
-arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] - wtr.eff.c[,4], angle = 90,
+bp_plot <- plot(x = xvars, y = wtr.eff.c[,3], ylab = "Denitification Efficiency\n(N2)",
+                   xlim = c(0.5, 5.8), ylim = c(-0.5, 5), lwd=3, yaxt="n", xaxt = "n", col="black",
+                   cex.lab=1.5, type="n")
+arrows(x0 = xvars, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] - wtr.eff.c[,4], angle = 90,
        length=0.1, lwd = 2)
-arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] + wtr.eff.c[,4], angle = 90,
+arrows(x0 = xvars, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] + wtr.eff.c[,4], angle = 90,
        length=0.1, lwd = 2)
+points(x = xvars, y = wtr.eff.c[,3], pch=22, bg=c("white", "gray", "white", "gray",
+                                                  "white", "gray", "white", "gray",
+                                                  "gray", "gray"), cex=3)
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
-mtext(levels(wtr.eff.c$Location), side = 1, at=bp_plot[c(1, 3, 5, 7, 9, 10)],
-      line = 1, cex=1.5, adj=0)
+mtext(levels(wtr.eff.c$Location), side = 1, at=c(1, 2, 3, 4, 4.8, 5.4),
+      line = 1, cex=1.5, adj=0.5)
+legend("topright", c("Baseline", "Storm"), fill=c("white", "gray"), bty="n", cex=1.25)
 
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
