@@ -116,8 +116,12 @@ graphics.off() # shuts down open devices
 
 
 
-# Water Denitrification Figure - NOT WORKING YET
+# Water Denitrification
 dat.water <- dat[dat$Type == "W", ]
+
+dat.water[,7:10][dat.water[,7:10] < 0] <- 0
+
+
 
 # Calculate Rate
 dat.water$Rate <- rep(NA, dim(dat.water)[1])
@@ -125,7 +129,7 @@ for (i in 1:dim(dat.water)[1]){
 	if (all(is.na(dat.water[i,7:10]))){
 		next
 	} else {
-	model <- lm(as.numeric(dat.water[i,7:10]) ~ c(0:3))
+	model <- lm(as.numeric(dat.water[i,7:10]) ~ c(1:4), na.action=na.omit)
 	B <- round(as.numeric(model$coefficients[2]), 3)
 	dat.water$Rate[i] <- B
 }}
@@ -133,29 +137,29 @@ for (i in 1:dim(dat.water)[1]){
 dim1 <- length(dat.water$acetyleneb[dat.water$acetyleneb == "-"])
 
 wtr.eff <- as.data.frame(matrix(NA, dim1, 4))
-colnames(wtr.eff) <- c("Location", "Time", "Replicate", "Efficiency")
+colnames(wtr.eff) <- c("Location", "Time", "Replicate", "Production")
 wtr.eff$Location <- dat.water$Location[dat.water$acetyleneb == "-"]
 wtr.eff$Time <- dat.water$Time[dat.water$acetyleneb == "-"]
 wtr.eff$Replicate <- dat.water$Replicate[dat.water$acetyleneb == "-"]
-wtr.eff$Efficiency <- (dat.water$Rate[dat.water$acetyleneb == "+"] -
-					   dat.water$Rate[dat.water$acetyleneb == "-"] ) /
-					  dat.water$Rate[dat.water$acetyleneb == "+"]
+wtr.eff$Production <- (dat.water$Rate[dat.water$acetyleneb == "+"] -
+					   dat.water$Rate[dat.water$acetyleneb == "-"] ) 
 
 wtr.eff.m <- melt(wtr.eff)
 wtr.eff.c <- cast(data = wtr.eff.m, Location + Time ~ variable, c(mean, se), na.rm=T)
 
 wtr.eff.c <- as.data.frame(wtr.eff.c)
 
-# Plot
-png(filename="./figures/WaterDenitrEff.png",
+# Plot - Water N2
+png(filename="./figures/WaterN2only.png",
     width = 1200, height = 800, res = 96*2)
 
 par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
-bp_plot <- barplot(wtr.eff.c[,3], ylab = "Denitification Efficiency\n(Total N2 - N20/Total N2)",
-                   lwd=3, yaxt="n", col="gray",
-                   cex.lab=1.5, cex.names = 1.25,
-                   space = c(1, 0.25, 1, 0.25, 1, 0.25, 1, 0.25, 1, 1),
-                   density=c(-1, 15, -1, 15, -1, 15, -1, 15, 15, 15))
+bp_plot <- barplot(wtr.eff.c[,3], 
+					ylab = "Denitrification Rate\n(ng N2/hr)", 
+					lwd=3, yaxt="n", col="gray", ex.lab=1.5, cex.names = 1.25,
+					ylim = c(-10, 10), 
+                   	space = c(1, 0.25, 1, 0.25, 1, 0.25, 1, 0.25, 1, 1),
+                   	density=c(-1, 15, -1, 15, -1, 15, -1, 15, 15, 15))
 arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] - wtr.eff.c[,4], angle = 90,
        length=0.1, lwd = 2)
 arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] + wtr.eff.c[,4], angle = 90,
@@ -163,8 +167,9 @@ arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] + wtr.eff.c[,4], ang
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
 mtext(c("Tar River\nOutflow", "Downstream\nSeep", "Stream\nMiddle", "Culvert\n",
         "Upstream\nCulvert", "Upstream\nInflow"),
-      side = 1, at=c(2, 4, 5, 8.5, 12, 14.5, 16.5),
+      side = 1, at=c(2, 5, 8.5, 12, 14.5, 16.5),
       line = 2, cex=0.8, adj=0.5)
+abline(h=0, lwd=2, lty=3)
 legend("topright", c("Baseline", "Storm"), fill="gray", bty="n", cex=1.25,
        density=c(-1, 15))
 
@@ -180,7 +185,7 @@ png(filename="./figures/WaterDenitrification.png",
 xvars <- c(0.8, 1.2, 1.8, 2.2, 2.8, 3.2, 3.8, 4.2, 4.8, 5.4)
 
 par(mar=c(2,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
-bp_plot <- plot(x = xvars, y = wtr.eff.c[,3], ylab = "Denitification Efficiency\n(N2)",
+bp_plot <- plot(x = xvars, y = wtr.eff.c[,3], ylab = "Denitrification Efficiency\n(rate of N2 production)",
                    xlim = c(0.5, 5.8), ylim = c(-0.5, 5), lwd=3, yaxt="n", xaxt = "n", col="black",
                    cex.lab=1.5, type="n")
 arrows(x0 = xvars, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] - wtr.eff.c[,4], angle = 90,
@@ -198,7 +203,44 @@ legend("topright", c("Baseline", "Storm"), fill=c("white", "gray"), bty="n", cex
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
 
+#Panel of graphs
+
 layout(matrix(c(1,2, 3), 1, 3, byrow = TRUE), widths = c(2, 2, 2))
 ## show the regions that have been allocated to each plot
 layout.show(3)
 
+# Import Data - water quality
+chem <- read.delim("./data/2015_TC_WaterQualityData.txt")
+chem$Replicate <- as.factor(chem$Replicate)
+
+chem.m <- melt(chem, id.vars = c("Location", "Type", "Storm"), measure.vars = "NH4")
+chem.c <- cast(data = chem.m, Location + Storm  ~ variable, c(mean, se), na.rm=T)
+
+chem.c <- as.data.frame(chem.c)
+
+
+
+
+# Plot
+png(filename="./figures/WaterQuality.png",
+    width = 1200, height = 800, res = 96*2)
+
+par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+TCplot <- barplot(chem.c[,3], ylab = "Ammonium (mg/L)",
+                   lwd=3, yaxt="n", col="gray",
+                   cex.lab=1.5, cex.names = 1.25, space = c(1, 0.25, 1, 0.25, 1, 0.25, 1, 0.25, 1, 1, 1, 1, 1))
+                   
+points(TCplot, chem.c[,3], pch=22, cex = 2, density=c(-1, 15, -1, 15, -1, 15, -1, 15, 15, 15, 15, 15, 15))
+arrows(x0 = TCplot, y0 = chem.c[,3], y1 = chem.c[,3] - chem.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+arrows(x0 = TCplot, y0 = chem.c[,3], y1 = chem.c[,3] + chem.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
+mtext(c("A", "B", "C", "D","E", "F", "G", "H", "I"))
+      side = 1, at=c(2, 4, 5, 8.5, 12, 14.5, 16.5),
+      line = 2, cex=0.8, adj=0.5)
+legend("topright", c("Baseline", "Storm"), fill="gray", bty="n", cex=1.25,
+       density=c(-1, 15))
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
