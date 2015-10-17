@@ -16,6 +16,13 @@ require("reshape")
 dat <- read.delim("./data/2015_TC_DEA.txt")
 dat$Replicate <- as.factor(dat$Replicate)
 
+# ANOVA - update for DEA
+aov.prnd=aov(copies~Rotation+Block,data=data.prnd)
+summary(aov.prnd)
+posthocD <-TukeyHSD(aov.prnd,"Rotation",conf.level=0.95)
+posthocD
+
+
 #All Samples - Denitrification
 dat.all <- dat[dat$acetyleneb == "+", ]
 
@@ -198,7 +205,7 @@ points(x = xvars, y = wtr.eff.c[,3], pch=22, bg=c("white", "gray", "white", "gra
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
 mtext(levels(wtr.eff.c$Location), side = 1, at=c(1, 2, 3, 4, 4.8, 5.4),
       line = 1, cex=1.5, adj=0.5)
-legend("topright", c("Baseline", "Storm"), fill=c("white", "gray"), bty="n", cex=1.25)
+legend("topright", c("Baseflow", "Stormflow"), fill=c("white", "gray"), bty="n", cex=1.25)
 
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
@@ -226,7 +233,7 @@ png(filename="./figures/WaterQuality.png",
     width = 1200, height = 800, res = 96*2)
 
 par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
-TCplot <- barplot(chem.c[,3], ylab = "Ammonium (mg/L)",
+TCplot <- plot(chem.c[,3], ylab = "Ammonium (mg/L)",
                    lwd=3, yaxt="n", col="gray",
                    cex.lab=1.5, cex.names = 1.25, space = c(1, 0.25, 1, 0.25, 1, 0.25, 1, 0.25, 1, 1, 1, 1, 1))
                    
