@@ -34,6 +34,40 @@ sed.eff.c <- cast(data = sed.eff.m, Location + Type ~ variable, c(mean, se), na.
 
 sed.eff.c <- as.data.frame(sed.eff.c)
 
+sed.eff.m <- as.data.frame(sed.eff.m)
+
+# # ANOVA - update 
+aov.sed=aov(value~Location*Type,data=sed.eff.m)
+summary(aov.sed)
+posthocD <-TukeyHSD(aov.sed,"Location:Type",conf.level=0.95)
+posthocD
+
+#Df Sum Sq Mean Sq F value   Pr(>F)    
+#Location       2   3182  1591.0   34.63 1.04e-05 ***
+#  Type           1   1393  1393.2   30.32 0.000135 ***
+#  Location:Type  2    996   498.2   10.84 0.002043 ** 
+#  Residuals     12    551    45.9                     
+#---Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#$`Location:Type`
+#diff        lwr        upr     p adj
+#C:BD-B:BD  -6.138610 -24.728454  12.451234 0.8685718
+#D:BD-B:BD -32.105738 -50.695582 -13.515894 0.0009204
+#B:BK-B:BD  -7.323933 -25.913777  11.265911 0.7678248
+#C:BK-B:BD -44.776813 -63.366657 -26.186968 0.0000386
+#D:BK-B:BD -38.929400 -57.519244 -20.339556 0.0001545
+#D:BD-C:BD -25.967128 -44.556972  -7.377284 0.0053439
+#B:BK-C:BD  -1.185323 -19.775167  17.404521 0.9999193
+#C:BK-C:BD -38.638203 -57.228047 -20.048359 0.0001661
+#D:BK-C:BD -32.790790 -51.380634 -14.200946 0.0007631
+#B:BK-D:BD  24.781805   6.191961  43.371649 0.0076133
+#C:BK-D:BD -12.671074 -31.260919   5.918770 0.2693580
+#D:BK-D:BD  -6.823662 -25.413506  11.766182 0.8132769
+#C:BK-B:BK -37.452880 -56.042724 -18.863035 0.0002238
+#D:BK-B:BK -31.605467 -50.195311 -13.015623 0.0010568
+#D:BK-C:BK   5.847413 -12.742431  24.437257 0.8891990
+
+
 # Plot - Sediment N2O
 png(filename="./figures/SedN2Oonly.png",
     width = 1200, height = 800, res = 96*2)
@@ -78,8 +112,19 @@ wtr.eff.m <- melt(wtr.eff)
 wtr.eff.c <- cast(data = wtr.eff.m, Location + Time ~ variable, c(mean, se), na.rm=T)
 
 wtr.eff.c <- as.data.frame(wtr.eff.c)
+wtr.eff.m <- as.data.frame(wtr.eff.m)
 
+# # ANOVA - update 
+aov.wtr=aov(value~Location*Time,data=wtr.eff.m)
+summary(aov.wtr)
+
+# Df Sum Sq Mean Sq F value Pr(>F)
+# Location       5 0.7579 0.15157   1.544  0.221
+# Time           1 0.1136 0.11360   1.157  0.295
+# Location:Time  3 0.5062 0.16872   1.718  0.195
+# Residuals     20 1.9638 0.09819  
 # Plot - Water Denitrification
+
 png(filename="./figures/WaterN2Oonly.png",
     width = 1200, height = 800, res = 96*2)
 
