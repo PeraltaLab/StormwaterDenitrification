@@ -131,6 +131,8 @@ summary(aov.wtr)
 png(filename="./figures/WaterN2Oonly.png",
     width = 1200, height = 800, res = 96*2)
 
+pdf(file = "./figures/WaterN2Oonly.pdf", width=6, height=4, paper='special')
+
 par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
 bp_plot <- barplot(wtr.eff.c[,3],
 					ylab = "Denitrification Rate\n(ng N2O * mL^-1 * hr^-1)",
