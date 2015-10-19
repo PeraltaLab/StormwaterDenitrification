@@ -51,15 +51,15 @@ arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] - chem.c[,4], angle = 90,
 arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] + chem.c[,4], angle = 90,
        length=0.1, lwd = 2)
 points(x = xvars, y = chem.c[,3], pch=22, cex=3,
-       bg=c("white", "gray", "white", "gray", "white", "gray", "white", "gray",
-            "gray", "gray", "gray", "gray", "gray"))
+       bg=c("white", "gray30", "white", "gray30", "white", "gray30", "white", "gray30",
+            "gray30", "gray30", "gray30", "gray30", "gray30"))
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
 axis(side = 1, labels=F, lwd.ticks=2, lwd = 2, at = c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7))
 mtext(c("A", "B", "C", "D","E", "F", "G", "H", "I"),
       side = 1, at=c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7),
       line = 1, cex=1, adj=0.5)
-mtext("Station", side = 1, line = 2.5, cex=1.5)
-legend("topright", c("Baseline", "Storm"), fill=c("white", "gray"), bty="n", cex=1.25)
+mtext("Sampling Location", side = 1, line = 2.5, cex=1.5)
+legend("topright", c("Baseflow", "Storm"), fill=c("white", "gray30"), bty="n", cex=1.25)
 
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
@@ -67,8 +67,10 @@ graphics.off() # shuts down open devices
 
 
 # Water Quality Panel Figure
-png(filename="./figures/WaterQuality.png",
+png(filename="./figures/WaterQuality2.png",
     width = 1600, height = 1600, res = 96*2)
+
+pdf(file = "./figures/WaterQuality.pdf", width=8, height=8, paper='special')
 
 # Globals
 xvars <- c(0.8, 1.2, 1.8, 2.2, 2.8, 3.2, 3.8, 4.2, 5, 5.5, 6, 6.5, 7)
@@ -85,22 +87,22 @@ chem.c <- as.data.frame(chem.c)
 
 TCplot <- plot(x = xvars, y = chem.c[,3],
                ylab = "Ammonium (mg/L)", xlim = c(0.5, 7.25), xlab = "",
-               lwd=3, yaxt="n", xaxt = "n", col="black", pch = 22,
+               lwd=3, yaxt="n", xaxt = "n", col="black", pch = 21,
                cex.lab=1.5)
 arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] - chem.c[,4], angle = 90,
        length=0.1, lwd = 2)
 arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] + chem.c[,4], angle = 90,
        length=0.1, lwd = 2)
-points(x = xvars, y = chem.c[,3], pch=22, cex=3,
-       bg=c("white", "gray", "white", "gray", "white", "gray", "white", "gray",
-            "gray", "gray", "gray", "gray", "gray"))
+points(x = xvars, y = chem.c[,3], pch=21, cex=2,
+       bg=c("white", "gray30", "white", "gray30", "white", "gray30", "white", "gray30",
+            "gray30", "gray30", "gray30", "gray30", "gray30"))
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
 axis(side = 1, labels=F, lwd.ticks=2, lwd = 2, at = c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7))
 mtext(c("A", "B", "C", "D","E", "F", "G", "H", "I"),
       side = 1, at=c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7),
       line = 1, cex=1, adj=0.5)
-mtext("Station", side = 1, line = 2.5, cex=1.5)
-legend("topright", c("Baseline", "Storm"), fill=c("white", "gray"), bty="n", cex=1.25)
+#mtext("Sampling Location", side = 1, line = 2.5, cex=1.5)
+legend("topright", c("Baseflow", "Stormflow"), fill=c("white", "gray30"), bty="n", cex=1.25)
 
 # Nitrate Nitrite
 chem.m <- melt(chem, id.vars = c("Location", "Type", "Storm"), measure.vars = "NO3.NO2")
@@ -108,49 +110,23 @@ chem.c <- cast(data = chem.m, Location + Storm  ~ variable, c(mean, se), na.rm=T
 chem.c <- as.data.frame(chem.c)
 
 TCplot <- plot(x = xvars, y = chem.c[,3],
-               ylab = "Nitrate/Nitrite (mg/L)", xlim = c(0.5, 7.25), xlab = "",
-               lwd=3, yaxt="n", xaxt = "n", col="black", pch = 22,
+               ylab = "Nitrate+Nitrite (mg/L)", xlim = c(0.5, 7.25), xlab = "",
+               lwd=3, yaxt="n", xaxt = "n", col="black", pch = 21,
                cex.lab=1.5)
 arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] - chem.c[,4], angle = 90,
        length=0.1, lwd = 2)
 arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] + chem.c[,4], angle = 90,
        length=0.1, lwd = 2)
-points(x = xvars, y = chem.c[,3], pch=22, cex=3,
-       bg=c("white", "gray", "white", "gray", "white", "gray", "white", "gray",
-            "gray", "gray", "gray", "gray", "gray"))
+points(x = xvars, y = chem.c[,3], pch=21, cex=2,
+       bg=c("white", "gray30", "white", "gray30", "white", "gray30", "white", "gray30",
+            "gray30", "gray30", "gray30", "gray30", "gray30"))
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
 axis(side = 1, labels=F, lwd.ticks=2, lwd = 2, at = c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7))
 mtext(c("A", "B", "C", "D","E", "F", "G", "H", "I"),
       side = 1, at=c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7),
       line = 1, cex=1, adj=0.5)
-mtext("Station", side = 1, line = 2.5, cex=1.5)
-legend("topright", c("Baseline", "Storm"), fill=c("white", "gray"), bty="n", cex=1.25)
-
-
-
-# DOC
-chem.m <- melt(chem, id.vars = c("Location", "Type", "Storm"), measure.vars = "DOC")
-chem.c <- cast(data = chem.m, Location + Storm  ~ variable, c(mean, se), na.rm=T)
-chem.c <- as.data.frame(chem.c)
-
-TCplot <- plot(x = xvars, y = chem.c[,3],
-               ylab = "DOC (mg/L)", xlim = c(0.5, 7.25), xlab = "",
-               lwd=3, yaxt="n", xaxt = "n", col="black", pch = 22,
-               cex.lab=1.5)
-arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] - chem.c[,4], angle = 90,
-       length=0.1, lwd = 2)
-arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] + chem.c[,4], angle = 90,
-       length=0.1, lwd = 2)
-points(x = xvars, y = chem.c[,3], pch=22, cex=3,
-       bg=c("white", "gray", "white", "gray", "white", "gray", "white", "gray",
-            "gray", "gray", "gray", "gray", "gray"))
-axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
-axis(side = 1, labels=F, lwd.ticks=2, lwd = 2, at = c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7))
-mtext(c("A", "B", "C", "D","E", "F", "G", "H", "I"),
-      side = 1, at=c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7),
-      line = 1, cex=1, adj=0.5)
-mtext("Station", side = 1, line = 2.5, cex=1.5)
-legend("topleft", c("Baseline", "Storm"), fill=c("white", "gray"), bty="n", cex=1.25)
+#mtext("Sampling Location", side = 1, line = 2.5, cex=1.5)
+#legend("topright", c("Baseflow", "Stormflow"), fill=c("white", "gray30"), bty="n", cex=1.25)
 
 
 # Total Dissolved Nitrogen
@@ -159,23 +135,49 @@ chem.c <- cast(data = chem.m, Location + Storm  ~ variable, c(mean, se), na.rm=T
 chem.c <- as.data.frame(chem.c)
 
 TCplot <- plot(x = xvars, y = chem.c[,3],
-               ylab = "TDN (mg/L)", xlim = c(0.5, 7.25), xlab = "",
-               lwd=3, yaxt="n", xaxt = "n", col="black", pch = 22,
-               cex.lab=1.5)
+               ylab = "Total Dissolved Nitrogen (mg/L)", xlim = c(0.5, 7.25), xlab = "",
+               lwd=3, yaxt="n", xaxt = "n", col="black", pch = 21,
+               cex.lab=1.5, ylim = c(0, 2.5))
 arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] - chem.c[,4], angle = 90,
        length=0.1, lwd = 2)
 arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] + chem.c[,4], angle = 90,
        length=0.1, lwd = 2)
-points(x = xvars, y = chem.c[,3], pch=22, cex=3,
-       bg=c("white", "gray", "white", "gray", "white", "gray", "white", "gray",
-            "gray", "gray", "gray", "gray", "gray"))
+points(x = xvars, y = chem.c[,3], pch=21, cex=2,
+       bg=c("white", "gray30", "white", "gray30", "white", "gray30", "white", "gray30",
+            "gray30", "gray30", "gray30", "gray30", "gray30"))
 axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
 axis(side = 1, labels=F, lwd.ticks=2, lwd = 2, at = c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7))
 mtext(c("A", "B", "C", "D","E", "F", "G", "H", "I"),
       side = 1, at=c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7),
       line = 1, cex=1, adj=0.5)
-mtext("Station", side = 1, line = 2.5, cex=1.5)
-legend("topright", c("Baseline", "Storm"), fill=c("white", "gray"), bty="n", cex=1.25)
+#mtext("Sampling Location", side = 1, line = 2.5, cex=1.5)
+#legend("topright", c("Baseflow", "Stormflow"), fill=c("white", "gray30"), bty="n", cex=1.25)
+
+# DOC
+pdf(file = "./figures/DOC.pdf", width=6, height=6, paper='special')
+
+chem.m <- melt(chem, id.vars = c("Location", "Type", "Storm"), measure.vars = "DOC")
+chem.c <- cast(data = chem.m, Location + Storm  ~ variable, c(mean, se), na.rm=T)
+chem.c <- as.data.frame(chem.c)
+
+TCplot <- plot(x = xvars, y = chem.c[,3],
+               ylab = "Dissolved Organic Carbon (mg/L)", xlim = c(0.5, 7.25), xlab = "",
+               lwd=3, yaxt="n", xaxt = "n", col="black", pch = 21,
+               cex.lab=1.5)
+arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] - chem.c[,4], angle = 90,
+       length=0.1, lwd = 1.5)
+arrows(x0 = xvars, y0 = chem.c[,3], y1 = chem.c[,3] + chem.c[,4], angle = 90,
+       length=0.1, lwd = 1.5)
+points(x = xvars, y = chem.c[,3], pch=21, cex=2,
+       bg=c("white", "gray30", "white", "gray30", "white", "gray30", "white", "gray30",
+            "gray30", "gray30", "gray30", "gray30", "gray30"))
+axis(side = 2, labels=T, lwd.ticks=1.5, las=2, lwd=1.5)
+axis(side = 1, labels=F, lwd.ticks=1.5, lwd = 1.5, at = c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7))
+mtext(c("A", "B", "C", "D","E", "F", "G", "H", "I"),
+      side = 1, at=c(1, 2, 3, 4, 5, 5.5, 6, 6.5, 7),
+      line = 1, cex=1, adj=0.5)
+mtext("Sampling Location", side = 1, line = 2.5, cex=1.5)
+legend("topleft", c("Baseflow", "Stormflow"), fill=c("white", "gray30"), bty="n", cex=1.25)
 
 dev.off() # this writes plot to folder
 graphics.off() # shuts down open devices
