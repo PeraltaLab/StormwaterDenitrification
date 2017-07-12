@@ -1,0 +1,3 @@
+system(cp ./TC.trim.contigs.good.unique.good.filter.good.unique.precluster.pick.pick.opti_mcc.unique_list.0.03.rep.fasta ./TC.bac.final.0.03.rep.fasta)
+system(cp ./TC.trim.contigs.good.unique.good.filter.good.unique.precluster.pick.pick.opti_mcc.unique_list.0.03.rep.count_table ./TC.bac.final.count)
+unifrac.weighted(tree=TC.bac.tree, count=TC.bac.final.count, distance=square, processors=16)
