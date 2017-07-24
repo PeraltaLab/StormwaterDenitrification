@@ -1,0 +1,127 @@
+---
+title: "Stormwater Denitrification"
+author: "Ariane L. Peralta, Mario E. Muscarella, Eban Bean"
+date: "Last updated on `r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{array}
+  - \usepackage{graphics}
+  - \usepackage[utf8]{inputenc}
+output:
+  pdf_document:
+  fig_caption: true
+---
+
+Project Description:
+Is there a phylogenetic diversity-functioning relationship in this urban stream ecosystem? 
+Does magnitude of function influence diversity-function relationship?
+Does sample type (sed vs. water) matter?
+
+
+# Initial Setup
+```{r, results="hide", message=FALSE}
+rm(list=ls())
+setwd("~/GitHub/StormwaterDenitrification/analyses")
+se <- function(x, ...){sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))}
+ci <- function(x, ...){1.96 * sd(x,na.rm = TRUE)}
+
+# Code Dependencies
+source("../bin/MothurTools.R")
+require("vegan")
+require("reshape")
+require("ggplot2")
+require("nlme")
+require("ade4")
+require("grid"); require("png")
+require("ape"); require("picante")
+library("agricolae")
+
+myColors <- c("#448844", "#33CC33", "#CCFF00", "#FFF000", "#FF9933", "#A9A9A9")
+#names(myColors) <- c()
+```
+
+# Import Data Files
+## Experimental Design File
+```{r}
+# Import Environmental Data
+design <- read.delim("../data/TC.design.txt", row.names = 1)
+```
+
+## Microbial Data
+```{r}
+# Import OTU data
+# Import Raw Data
+otu.in <- read.otu("../data/TC.bac.final.shared")
+
+# Correct Sample IDs and Subset Original Design File
+rownames(design) <- gsub("_0", "_", gsub("^ECU_", "", rownames(design)))
+design.otu <- design[which(rownames(design) %in% rownames(otu.in)), ]
+all.equal(rownames(data.in), rownames(design.otu))
+
+# Remove OTUs with less than two occurences across all sites
+otus <- otu.in[, which(colSums(otu.in) >= 2)]
+
+# Make Presence Absence Matrix
+dataPA <- (otus > 0) * 1
+
+# Make Relative Abundence Matrices
+dataREL <- otus
+for(i in 1:dim(otus)[1]){
+  dataREL[i,] <- otus[i,]/sum(otus[i,])
+}
+
+# Log Transform Relative Abundances
+dataREL.log <- decostand(dataREL, method="log")
+
+# Import Taxonomy File
+otu.tax <- read.tax(taxonomy = "../data/TC.bac.final.0.03.taxonomy",
+                   format = "rdp", tax.levels = 6, col.tax = 3)
+```
+
+## Phylogenetic Tree and UniFrac Distance Matrix
+```{r}
+# Import Tree
+tree <- read.tree("../data/TC.bac.rename.tree")
+
+# Import Unifrac Matrix
+unifrac.raw <- read.delim("../data/TC.bac.tree1.weighted.phylip.dist",
+                             header = F, skip = 1, row.names = 1)
+
+row.names(unifrac.raw) <- gsub("     ", "", row.names(unifrac.raw))
+
+unifrac <- WL.unifrac.raw[which(row.names(unifrac.raw) %in%
+                                   row.names(data.in)),
+                             which(row.names(unifrac.raw) %in%
+                                   row.names(data.in))]
+
+rownames(unifrac) <- gsub("     ", "", row.names(unifrac))
+colnames(unifrac) <- rownames(unifrac)
+dim(unifrac)
+
+# Make into Distance Matrix
+unifrac.dist <- as.dist(unifrac, upper = T, diag = T)
+```
+
+## Notes: Phylogenetic Analysis
+```{sh, eval = F}
+# The following was done outside of R
+python ../bin/name_change.py TC.bac.final.0.03.rep.fasta TC.bac.final.0.03.rep.rename.fasta
+
+# This version is needed for Mothur
+FastTree -gtr -nt -gamma -fastest TC.bac.final.0.03.rep.fasta > TC.bac.rename.tree
+
+# This version is needed for R analysis
+FastTree -gtr -nt -gamma -fastest TC.bac.final.0.03.rep.rename.fasta > TC.bac.rename.tree
+
+Mothur (v 1.39.5)
+system(cp ./TC.trim.contigs.good.unique.good.filter.good.unique.precluster.pick.pick.opti_mcc.unique_list.0.03.rep.fasta ./TC.bac.final.0.03.rep.fasta)
+system(cp ./TC.trim.contigs.good.unique.good.filter.good.unique.precluster.pick.pick.opti_mcc.unique_list.0.03.rep.count_table ./TC.bac.final.count)
+unifrac.weighted(tree=TC.bac.tree, count=TC.bac.final.count, distance=square, processors=8)
+
+Output File Names:
+TC.bac.treewsummary
+TC.bac.tree1.weighted.phylip.dist
+```
+
+## Denitrification
+
+
