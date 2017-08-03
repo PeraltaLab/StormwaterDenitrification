@@ -16,6 +16,13 @@ Is there a phylogenetic diversity-functioning relationship in this urban stream 
 Does magnitude of function influence diversity-function relationship?
 Does sample type (sed vs. water) matter?
 
+ToDo
+1. Calculate relative abundance for each tip
+2. Regress relative abundance against denitrification
+3. Generate all sub-trees
+4. Loop through sub-trees and add relative abundances for tips in sub tree
+5. Regress subtree relative abundance against denitrification
+
 
 # Initial Setup
 ```{r, results="hide", message=FALSE}
@@ -37,6 +44,20 @@ library("agricolae")
 
 myColors <- c("#448844", "#33CC33", "#CCFF00", "#FFF000", "#FF9933", "#A9A9A9")
 #names(myColors) <- c()
+
+# Calculates Simpsons Evenness
+simp_even <- function(SAD = " "){
+  SAD <- subset(SAD, SAD > 0)
+  S <- length(SAD)
+  N <- sum(SAD)
+  X <- rep(NA, S)
+  for (i in 1:S){
+    X[i] <- (SAD[i]*(SAD[i] - 1)) / (N * (N - 1))
+    }
+  D <- sum(X)
+  e_d <- (1/D)/S
+  return(e_d)
+  }
 ```
 
 # Import Data Files
@@ -82,16 +103,19 @@ otu.tax <- read.tax(taxonomy = "../data/TC.bac.final.0.03.taxonomy",
 # Import Tree
 tree <- read.tree("../data/TC.bac.rename.tree")
 
+tree$tip.label[1:5]
+tree$tip.label <- gsub("\\|", "", tree$tip.label)
+
 # Import Unifrac Matrix
 unifrac.raw <- read.delim("../data/TC.bac.tree1.weighted.phylip.dist",
                              header = F, skip = 1, row.names = 1)
 
 row.names(unifrac.raw) <- gsub("     ", "", row.names(unifrac.raw))
 
-unifrac <- WL.unifrac.raw[which(row.names(unifrac.raw) %in%
-                                   row.names(data.in)),
+unifrac <- unifrac.raw[which(row.names(unifrac.raw) %in%
+                                   row.names(otus)),
                              which(row.names(unifrac.raw) %in%
-                                   row.names(data.in))]
+                                   row.names(otus))]
 
 rownames(unifrac) <- gsub("     ", "", row.names(unifrac))
 colnames(unifrac) <- rownames(unifrac)
@@ -107,7 +131,7 @@ unifrac.dist <- as.dist(unifrac, upper = T, diag = T)
 python ../bin/name_change.py TC.bac.final.0.03.rep.fasta TC.bac.final.0.03.rep.rename.fasta
 
 # This version is needed for Mothur
-FastTree -gtr -nt -gamma -fastest TC.bac.final.0.03.rep.fasta > TC.bac.rename.tree
+FastTree -gtr -nt -gamma -fastest TC.bac.final.0.03.rep.fasta > TC.bac.tree
 
 # This version is needed for R analysis
 FastTree -gtr -nt -gamma -fastest TC.bac.final.0.03.rep.rename.fasta > TC.bac.rename.tree
@@ -123,5 +147,270 @@ TC.bac.tree1.weighted.phylip.dist
 ```
 
 ## Denitrification
+```{r}
+# Import Data
+dat <- read.delim("../data/WQ_DEA_separate/2015_TC_DEArate.txt")
+dat$Replicate <- as.factor(dat$Replicate)
+```
 
+# Sediment Denitrification
+```{r}
+dat.sed <- dat[dat$Type != "W", ]
+
+dim1 <- length(dat.sed$acetyleneb[dat.sed$acetyleneb == "-"])
+
+sed.eff <- as.data.frame(matrix(NA, dim1, 4))
+colnames(sed.eff) <- c("Location", "Type", "Replicate", "Rate")
+sed.eff$Location <- dat.sed$Location[dat.sed$acetyleneb == "-"]
+sed.eff$Type <- dat.sed$Type[dat.sed$acetyleneb == "-"]
+sed.eff$Replicate <- dat.sed$Replicate[dat.sed$acetyleneb == "-"]
+sed.eff$Rate <- (dat.sed$Rate[dat.sed$acetyleneb == "+"] -
+					   dat.sed$Rate[dat.sed$acetyleneb == "-"] )
+
+# Reorganize
+sed.eff.m <- melt(sed.eff)
+sed.eff.c <- cast(data = sed.eff.m, Location + Type ~ variable, c(mean, se), na.rm=T)
+
+sed.eff.c <- as.data.frame(sed.eff.c)
+sed.eff.m <- as.data.frame(sed.eff.m)
+
+# # ANOVA - update
+aov.sed=aov(value~Location*Type,data=sed.eff.m)
+summary(aov.sed)
+posthocD <-TukeyHSD(aov.sed,"Location:Type",conf.level=0.95)
+posthocD
+```
+
+# Sediment Denitrification Plot
+```{r}
+# Plot - Sediment N2O
+png(filename="../figures/SedN2Oonly.png",
+    width = 1200, height = 800, res = 96*2)
+
+pdf(file = "../figures/SedN2Oonly.pdf", width=6, height=4, paper='special')
+
+par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+bp_plot <- barplot(sed.eff.c[,3],
+					ylab = "", xlab = "",
+					lwd=3, col="gray", cex.lab=1.25, cex.names = 1.25,
+					ylim = c(-2, 60), yaxt="n",
+          space = c(1, 0.25, 1, 0.25, 1, 0.25),
+          density=c(-1, 15, -1, 15, -1, 15))
+arrows(x0 = bp_plot, y0 = sed.eff.c[,3], y1 = sed.eff.c[,3] - sed.eff.c[,4],
+       angle = 90, length=0.1, lwd = 2)
+arrows(x0 = bp_plot, y0 = sed.eff.c[,3], y1 = sed.eff.c[,3] + sed.eff.c[,4],
+       angle = 90, length=0.1, lwd = 2)
+axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2, at = c(seq(0, 60, 20)))
+mtext(c("Downstream\nSeep", "Stream\nMiddle", "Culvert\n"),
+      side = 1, at=c(2.2, 5.4, 8.6),
+      line = 1.5, cex=1, adj=0.5)
+mtext("Denitrification Rate", side = 2, line = 3.25, cex = 1.25)
+mtext(side = 2, line = 2,  text = expression(paste("(ng N"[2], "O g"^-1, "sediment hr"^-1, ")")))
+abline(h=0, lwd=2, lty=3)
+legend("topright", c("stream bed", "stream bank"), fill="gray", bty="n", cex=1,
+       density=c(-1, 15))
+
+dev.off() # sthis writes plot to folder
+graphics.off()
+
+## Show Plot
+img <- readPNG("../figures/SedN2Oonly.png")
+grid.raster(img)
+```
+
+# Water Denitrification
+```{r}
+dat.water <- dat[dat$Type == "W", ]
+
+# Deal with negative values
+#dat.water[,7:10][dat.water[,7:10] < 0] <- 0
+
+dim1 <- length(dat.water$acetyleneb[dat.water$acetyleneb == "-"])
+
+wtr.eff <- as.data.frame(matrix(NA, dim1, 4))
+colnames(wtr.eff) <- c("Location", "Time", "Replicate", "Rate")
+wtr.eff$Location <- dat.water$Location[dat.water$acetyleneb == "-"]
+wtr.eff$Time <- dat.water$Time[dat.water$acetyleneb == "-"]
+wtr.eff$Replicate <- dat.water$Replicate[dat.water$acetyleneb == "-"]
+wtr.eff$Rate <- (dat.water$Rate[dat.water$acetyleneb == "+"] -
+					   dat.water$Rate[dat.water$acetyleneb == "-"] )
+
+# Reorganize Data
+wtr.eff.m <- melt(wtr.eff)
+wtr.eff.c <- cast(data = wtr.eff.m, Location + Time ~ variable, c(mean, se), na.rm=T)
+
+wtr.eff.c <- as.data.frame(wtr.eff.c)
+wtr.eff.m <- as.data.frame(wtr.eff.m)
+
+# # ANOVA - update
+aov.wtr=aov(value~Location*Time,data=wtr.eff.m)
+summary(aov.wtr)
+
+# Df Sum Sq Mean Sq F value Pr(>F)
+# Location       5 0.7579 0.15157   1.544  0.221
+# Time           1 0.1136 0.11360   1.157  0.295
+# Location:Time  3 0.5062 0.16872   1.718  0.195
+# Residuals     20 1.9638 0.09819
+```
+
+# Water Denitrification Plot
+```{r}
+png(filename="../figures/WaterN2Oonly.png",
+    width = 1200, height = 800, res = 96*2)
+
+pdf(file = "../figures/WaterN2Oonly.pdf", width=6, height=4, paper='special')
+
+par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+bp_plot <- barplot(wtr.eff.c[,3],
+					ylab = "",
+					lwd=3, yaxt="n", col="gray", ex.lab=1.5, cex.names = 1.25,
+					ylim = c(-1, 2),
+                   	space = c(1, 0.25, 1, 0.25, 1, 0.25, 1, 0.25, 1, 1),
+                   	density=c(-1, 15, -1, 15, -1, 15, -1, 15, 15, 15))
+arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] - wtr.eff.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+arrows(x0 = bp_plot, y0 = wtr.eff.c[,3], y1 = wtr.eff.c[,3] + wtr.eff.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2, at = c(seq(-1, 2, 1)))
+mtext(c("Tar River\nOutflow", "Downstream\nSeep", "Stream\nMiddle", "Culvert\n",
+        "Upstream\nCulvert", "Upstream\nInflow"),
+      side = 1, at=c(2, 5.5, 9, 11.75, 14.5, 17),
+      line = 2, cex=0.8, adj=0.5)
+mtext("Denitrification Rate", side = 2, line = 3.25, cex = 1.25)
+mtext(side = 2, line = 2,  text = expression(paste("(ng N"[2], "O g"^-1, "sediment hr"^-1, ")")))
+
+abline(h=0, lwd=2, lty=3)
+legend("topright", c("baseflow", "stormflow"), fill="gray", bty="n", cex=1,
+       density=c(-1, 15))
+
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
+
+## Show Plot
+img <- readPNG("../figures/WaterN2Oonly.png")
+grid.raster(img)
+```
+
+# Diversity-Function Relationships
+```{r}
+min(rowSums(otus))
+
+# remove low count sites
+bad <- which(rowSums(otus) < 10000)
+otus.2 <- otus[-c(bad), ]
+otus.2 <- otus.2[, -c(which(colSums(otus.2) == 0))]
+min(rowSums(otus.2))
+
+otus.r <- rrarefy(otus.2, 10000)
+
+# Fisher's Alpha
+fisher <- fisher.alpha(otus.r)
+fisher
+
+# Species Richness
+richness <- rowSums((otus.r >= 1))
+
+# Shannon Diversity (my function gets the same answer)
+shannon <- diversity(otus.r, "shannon")
+
+# Simpson's Evenness
+simp.even <- apply(otus.r, 1, simp_even)
+
+# Phylogenetic Diversity
+# Reorder Tree
+which(tree$edge.length < 0.0000001)
+tree.2 <- reorder(tree, order = "cladewise")
+tree.r <- midpoint.root(tree.2)
+phylo.d <- pd(otus.r, tree, include.root = F)
+
+design.r <- design.otu[which(rownames(design.otu) %in% rownames(otus.r)), ]
+
+
+design.sed <- design.r[design.r$Sample_Type != "W", ]
+
+sed.bac <- as.data.frame(matrix(NA, dim(design.sed)[1], 9))
+colnames(sed.bac) <- c("Sample", "Location", "Time", "Type", "Replicate", "S", "F_alpha", 
+                       "S_even", "Shannon")
+sed.bac$Sample <- rownames(design.sed)
+sed.bac$Location <- design.sed$Location
+sed.bac$Time <- design.sed$Storm
+sed.bac$Type <- design.sed$Sample_Type
+sed.bac$Replicate <- design.sed$Field_replicate
+for(i in 1:length(rownames(design.sed))){
+  temp <- rownames(design.sed)[i]
+  sed.bac$S[i] <- richness[which(names(richness) == temp)]
+  sed.bac$F_alpha[i] <- fisher[which(names(fisher) == temp)]
+  sed.bac$S_even[i] <- simp.even[which(names(simp.even) == temp)]
+  sed.bac$Shannon[i] <- shannon[which(names(shannon) == temp)]
+}
+
+# Reorganize
+sed.bac.m <- melt(sed.bac, id = c("Sample", "Location", "Time", "Type", "Replicate"))
+sed.bac.c <- cast(data = sed.bac.m, Location + Type + Replicate ~ variable, c(mean, se), na.rm=T)
+
+sed.bac.c <- as.data.frame(sed.bac.c)
+sed.bac.m <- as.data.frame(sed.bac.m)
+
+# # ANOVA - update
+aov.sed=aov(value~Location*Type,data=sed.bac.m[which(sed.bac.m$variable == "S"), ])
+summary(aov.sed)
+posthocD <-TukeyHSD(aov.sed,"Location:Type",conf.level=0.95)
+posthocD
+
+```
+
+
+
+
+
+
+
+
+# Water Quality Data
+```{r}
+layout(matrix(c(1,2, 3), 1, 3, byrow = TRUE), widths = c(2, 2, 2))
+## show the regions that have been allocated to each plot
+layout.show(3)
+
+# Import Data - water quality
+chem <- read.delim("../data/WQ_DEA_separate/2015_TC_WaterQualityData.txt")
+chem$Replicate <- as.factor(chem$Replicate)
+
+chem.m <- melt(chem, id.vars = c("Location", "Type", "Storm"), measure.vars = "NH4")
+chem.c <- cast(data = chem.m, Location + Storm  ~ variable, c(mean, se), na.rm=T)
+
+chem.c <- as.data.frame(chem.c)
+```
+
+# Water quality Plot
+```{r}
+png(filename="../figures/WaterQuality.png",
+    width = 1200, height = 800, res = 96*2)
+
+par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+TCplot <- barplot(chem.c[,3], ylab = "Ammonium (mg/L)",
+                   lwd=3, yaxt="n", col="gray",
+                   cex.lab=1.5, cex.names = 1.25, 
+                  space = c(1, 0.25, 1, 0.25, 1, 0.25, 1, 0.25, 1, 1, 1, 1, 1))
+
+points(TCplot, chem.c[,3], pch=22, cex = 2, density=c(-1, 15, -1, 15, -1, 15, -1, 15, 15, 15, 15, 15, 15))
+arrows(x0 = TCplot, y0 = chem.c[,3], y1 = chem.c[,3] - chem.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+arrows(x0 = TCplot, y0 = chem.c[,3], y1 = chem.c[,3] + chem.c[,4], angle = 90,
+       length=0.1, lwd = 2)
+axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2)
+mtext(c("A", "B", "C", "D","E", "F", "G", "H", "I"))
+      side = 1, at=c(2, 4, 5, 8.5, 12, 14.5, 16.5),
+      line = 2, cex=0.8, adj=0.5)
+legend("topright", c("Baseline", "Storm"), fill="gray", bty="n", cex=1.25,
+       density=c(-1, 15))
+
+dev.off() # this writes plot to folder
+graphics.off() # shuts down open devices
+
+## Show Plot
+img <- readPNG("../figures/WaterQuality.png")
+grid.raster(img)
+```
 
