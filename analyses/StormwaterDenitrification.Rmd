@@ -34,7 +34,8 @@ ci <- function(x, ...){1.96 * sd(x,na.rm = TRUE)}
 # Code Dependencies
 source("../bin/MothurTools.R")
 require("vegan")
-require("reshape")
+require("reshape2")
+require("dplyr")
 require("ggplot2")
 require("nlme")
 require("ade4")
@@ -76,7 +77,7 @@ otu.in <- read.otu("../data/TC.bac.final.shared")
 # Correct Sample IDs and Subset Original Design File
 rownames(design) <- gsub("_0", "_", gsub("^ECU_", "", rownames(design)))
 design.otu <- design[which(rownames(design) %in% rownames(otu.in)), ]
-all.equal(rownames(data.in), rownames(design.otu))
+all.equal(rownames(otu.in), rownames(design.otu))
 
 # Remove OTUs with less than two occurences across all sites
 otus <- otu.in[, which(colSums(otu.in) >= 2)]
@@ -96,6 +97,131 @@ dataREL.log <- decostand(dataREL, method="log")
 # Import Taxonomy File
 otu.tax <- read.tax(taxonomy = "../data/TC.bac.final.0.03.taxonomy",
                    format = "rdp", tax.levels = 6, col.tax = 3)
+```
+
+# Simple Hypothesis Testing Bacterial Community Composition - 
+```{r}
+#PERMANOVA on baseflow only
+new.data <-cbind(design.otu,dataREL)
+as.data.frame(new.data)
+new.data.2 <- subset(new.data, Storm == "baseflow")
+
+adonis = adonis(new.data.2[,-c(1:6)] ~ Sample_Type, method = "bray", data = new.data.2, perm=1000)
+adonis
+```
+# Microbial Ordinations
+
+## Principal Coordinates Ordination
+```{r}
+# TEST with original labels
+# Create Distance Matrix
+sampleREL.dist <- vegdist(dataREL, method="bray")
+
+# Principal Coordinates Analysis
+TC_pcoa <- cmdscale(sampleREL.dist, k=3, eig=TRUE, add=FALSE)
+  # Classical (Metric) Multidimensional Scaling; returns PCoA coordinates
+  # eig=TRUE returns eigenvalues; k = # of dimensions to calculate
+
+explainvar1 <- round(TC_pcoa$eig[1] / sum(TC_pcoa$eig), 3) * 100
+explainvar2 <- round(TC_pcoa$eig[2] / sum(TC_pcoa$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2)
+
+points <- cbind(as.data.frame(TC_pcoa$points), design.otu$Sample_Type)
+L.centroids <- melt(points, id="design.otu$Sample_Type", measure.vars = c("V1", "V2"))
+centroids <- cast(L.centroids, variable ~ design.otu$Sample_Type, mean)
+centroids.se <- cast(L.centroids, variable ~ design.otu$Sample_Type, se)
+centroids.sd <- cast(L.centroids, variable ~ design.otu$Sample_Type, sd)
+
+cent.dataframe <- t(data.frame(rbind(centroids[1,-1], centroids[2,-1],
+                             centroids.sd[1,-1],centroids.sd[2,-1])))
+colnames(cent.dataframe) <- c("V1", "V2", "V1e", "V2e")
+cent.treats <- rownames(cent.dataframe)
+
+explainvar1 #Include in PCoA 1 axis label 18.7%
+explainvar2 #Include in PCoA 2 axis label 16.5%
+                                        
+df <- as.data.frame(cent.dataframe)
+p <- ggplot(df, aes(x=V1, y=V2, colour=cent.treats)) + theme_bw() 
+p + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+theme(panel.background = element_blank()) + 
+  geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0.01), colour="black") +    
+  geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0.01), colour="black") + 
+  geom_point(size=5) 
+
+```
+
+```{r}
+# Create Distance Matrix
+sampleREL.dist <- vegdist(BDdataREL, method="bray")
+
+# Principal Coordinates Analysis
+TC_pcoa <- cmdscale(sampleREL.dist, k=3, eig=TRUE, add=FALSE)
+  # Classical (Metric) Multidimensional Scaling; returns PCoA coordinates
+  # eig=TRUE returns eigenvalues; k = # of dimensions to calculate
+
+explainvar1 <- round(TC_pcoa$eig[1] / sum(TC_pcoa$eig), 3) * 100
+explainvar2 <- round(TC_pcoa$eig[2] / sum(TC_pcoa$eig), 3) * 100
+sum.eig <- sum(explainvar1, explainvar2)
+```
+
+# Plot
+```{r}
+treatments <- factor(design.otu$Sample_Type, levels = c("BD", "BK", 
+                     "W"))
+points <- cbind(as.data.frame(TC_pcoa$points), treatments)
+L.centroids <- melt(points, id="treatments", measure.vars = c("V1", "V2"))
+centroids <- cast(L.centroids, variable ~ treatments, mean)
+centroids.se <- cast(L.centroids, variable ~ treatments, se)
+centroids.sd <- cast(L.centroids, variable ~ treatments, sd)
+
+cent.dataframe <- t(data.frame(rbind(centroids[1,-1], centroids[2,-1],
+                             centroids.sd[1,-1],centroids.sd[2,-1])))
+colnames(cent.dataframe) <- c("V1", "V2", "V1e", "V2e")
+cent.treats <- rownames(cent.dataframe)
+
+explainvar1 #Include in PCoA 1 axis label 18.7%
+explainvar2 #Include in PCoA 2 axis label 16.5%
+
+###need to incorporate shape for Location and color for Sample_Type
+
+pcoa.groups <- paste(design.otu$Sample_Type, design.otu$Location, sep = "_")
+pcoa.points <- data.frame(TC_pcoa$points, group = pcoa.groups)
+
+# Calculate Centroids (mean and SE)
+pcoa.L.centroids <- melt(pcoa.points, id="group", measure.vars = c("X1", "X2"))
+pcoa.centroids <- acast(pcoa.L.centroids, variable ~ group, mean)
+pcoa.centroids.se <- acast(pcoa.L.centroids, variable ~ group, se)
+pcoa.centroids.sd <- acast(pcoa.L.centroids, variable ~ group, sd)
+
+# Combine
+pcoa.cent.dataframe <- cbind(t(pcoa.centroids), t(pcoa.centroids.se))
+colnames(pcoa.cent.dataframe) <- c("V1", "V2", "V1e", "V2e")
+pcoa.cent.treats <- rownames(pcoa.cent.dataframe)
+
+
+#STUCK HERE
+pcoa.col <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 2)) # Salinity
+pcoa.shape <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 1))  # Date2
+
+
+
+df <- as.data.frame(cent.dataframe)
+p <- ggplot(df, aes(x=V1, y=V2, colour=cent.treats)) + theme_bw() 
+p + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+theme(panel.background = element_blank()) + 
+  geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0.01), colour="black") +    
+  geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0.01), colour="black") + 
+  geom_point(size=5,shape=as.factor(design.otu$Location)) +
+  scale_colour_manual(labels = c("stream bed", "stream bank", "water"), values = c("brown","orange","blue")) +
+  scale_shape_manual(labels = c("B","C","D"), values = c(22, 21, 24)) +
+theme(axis.title=element_text(size=18), axis.text.x=element_text(size=14), panel.border = element_rect(colour = "black",size=1.25)) + 
+  theme(axis.ticks.length=unit(0.3,"cm")) + 
+  xlab("PCoA 1 (18.7%)") + ylab("PCoA 2 (16.5%)") + 
+  labs(fill = "Sample Type", shape = "Location") +
+  guides(fill = guide_legend(override.aes = list(pch=21, size = 4, colour="black")),
+         shape = guide_legend(override.aes = list(size = 4, fill="black")))
+  
+ggsave("../figures/16SrRNA_BCC_Rplot.pdf", plot=last_plot(), device=NULL, path=NULL, scale=1, width=NA, height=NA, dpi=300, limitsize=TRUE)
 ```
 
 ## Phylogenetic Tree and UniFrac Distance Matrix
