@@ -446,8 +446,8 @@ simp.even <- apply(otus.r, 1, simp_even)
 # Phylogenetic Diversity
 # Reorder Tree
 which(tree$edge.length < 0.0000001)
-tree.2 <- reorder(tree, order = "cladewise")
-tree.r <- midpoint.root(tree.2)
+#tree.2 <- reorder(tree, order = "cladewise")
+#tree.r <- midpoint.root(tree.2)
 phylo.d <- pd(otus.r, tree, include.root = F)
 
 design.r <- design.otu[which(rownames(design.otu) %in% rownames(otus.r)), ]
@@ -455,9 +455,9 @@ design.r <- design.otu[which(rownames(design.otu) %in% rownames(otus.r)), ]
 
 design.sed <- design.r[design.r$Sample_Type != "W", ]
 
-sed.bac <- as.data.frame(matrix(NA, dim(design.sed)[1], 9))
-colnames(sed.bac) <- c("Sample", "Location", "Time", "Type", "Replicate", "S", "F_alpha", 
-                       "S_even", "Shannon")
+sed.bac <- as.data.frame(matrix(NA, dim(design.sed)[1], 10))
+colnames(sed.bac) <- c("Sample", "Location", "Time", "Type", "Replicate", 
+                       "S", "F_alpha", "S_even", "Shannon", "Phylo")
 sed.bac$Sample <- rownames(design.sed)
 sed.bac$Location <- design.sed$Location
 sed.bac$Time <- design.sed$Storm
@@ -469,11 +469,12 @@ for(i in 1:length(rownames(design.sed))){
   sed.bac$F_alpha[i] <- fisher[which(names(fisher) == temp)]
   sed.bac$S_even[i] <- simp.even[which(names(simp.even) == temp)]
   sed.bac$Shannon[i] <- shannon[which(names(shannon) == temp)]
+  sed.bac$Phylo[i] <- phylo.d[which(rownames(phylo.d) == temp), 1]
 }
 
 # Reorganize
-sed.bac.m <- melt(sed.bac, id = c("Sample", "Location", "Time", "Type", "Replicate"))
-sed.bac.c <- cast(data = sed.bac.m, Location + Type + Replicate ~ variable, c(mean, se), na.rm=T)
+sed.bac.m <- melt(sed.bac, id = c("Sample", "Location", "Time", "Type"))
+sed.bac.c <- cast(data = sed.bac.m, Location + Type ~ variable, c(mean, se), na.rm=T)
 
 sed.bac.c <- as.data.frame(sed.bac.c)
 sed.bac.m <- as.data.frame(sed.bac.m)
@@ -486,8 +487,142 @@ posthocD
 
 ```
 
+# Diversity Function Plots
+```{r}
 
 
+png(filename="../figures/DiversityFunction.png",
+    width = 1200, height = 800, res = 96*2)
+
+#pdf(file = "../figures/DiversityFunction.pdf", width=6, height=4, paper='special')
+
+par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+bp_plot <- barplot(sed.bac.c[, 5],
+					ylab = "", xlab = "",
+					lwd=3, col="gray", cex.lab=1.25, cex.names = 1.25,
+					ylim = c(0, 4500), yaxt="n",
+          space = c(1, 0.25, 1, 0.25, 1, 0.25),
+          density=c(-1, 15, -1, 15, -1, 15))
+arrows(x0 = bp_plot, y0 = sed.bac.c[, 5], y1 = sed.bac.c[, 5] - sed.bac.c[, 6],
+       angle = 90, length=0.1, lwd = 2)
+arrows(x0 = bp_plot, y0 = sed.bac.c[, 5], y1 = sed.bac.c[, 5] + sed.bac.c[, 6],
+       angle = 90, length=0.1, lwd = 2)
+axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2, at = c(seq(0, 4500, 1000)))
+mtext(c("Downstream\nSeep", "Stream\nMiddle", "Culvert\n"),
+      side = 1, at=c(2.2, 5.4, 8.6),
+      line = 1.5, cex=1, adj=0.5)
+mtext("Taxonomic Richness", side = 2, line = 4, cex = 1.25)
+abline(h=0, lwd=2, lty=3)
+legend("topright", c("stream bed", "stream bank"), fill="gray", bty="n", cex=1,
+       density=c(-1, 15))
+
+dev.off() # sthis writes plot to folder
+graphics.off()
+
+## Show Plot
+img <- readPNG("../figures/DiversityFunction.png")
+grid.raster(img)
+
+```
+
+
+
+
+
+# Phylo Diversity Function Plots
+```{r}
+
+
+png(filename="../figures/PhyloDiversityFunction.png",
+    width = 1200, height = 800, res = 96*2)
+
+#pdf(file = "../figures/DiversityFunction.pdf", width=6, height=4, paper='special')
+
+par(mar=c(3,6,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+bp_plot <- barplot(sed.bac.c[, 9],
+					ylab = "", xlab = "",
+					lwd=3, col="gray", cex.lab=1.25, cex.names = 1.25,
+					ylim = c(0, 0.3), yaxt="n",
+          space = c(1, 0.25, 1, 0.25, 1, 0.25),
+          density=c(-1, 15, -1, 15, -1, 15))
+arrows(x0 = bp_plot, y0 = sed.bac.c[, 9], y1 = sed.bac.c[, 9] - sed.bac.c[, 10],
+       angle = 90, length=0.1, lwd = 2)
+arrows(x0 = bp_plot, y0 = sed.bac.c[, 9], y1 = sed.bac.c[, 9] + sed.bac.c[, 10],
+       angle = 90, length=0.1, lwd = 2)
+axis(side = 2, labels=T, lwd.ticks=2, las=2, lwd=2, at = c(seq(0, 0.3, 0.1)))
+mtext(c("Downstream\nSeep", "Stream\nMiddle", "Culvert\n"),
+      side = 1, at=c(2.2, 5.4, 8.6),
+      line = 1.5, cex=1, adj=0.5)
+mtext("Phylogenetic Diversity", side = 2, line = 4, cex = 1.25)
+abline(h=0, lwd=2, lty=3)
+legend("topleft", c("stream bed", "stream bank"), fill="gray", bty="n", cex=1,
+       density=c(-1, 15))
+
+dev.off() # sthis writes plot to folder
+graphics.off()
+
+## Show Plot
+img <- readPNG("../figures/PhyloDiversityFunction.png")
+grid.raster(img)
+
+```
+
+# Function Phylo-Div
+```{r}
+png(filename="../figures/PhyloDiversityFunction2.png",
+    width = 1200, height = 800, res = 96*2)
+
+
+par(mar=c(5,5,0.5,0.5), oma=c(1,1,1,1)+0.1, lwd=2)
+plot(sed.bac.c[which(sed.bac.c$Type == "BD"), 9] ~  
+       sed.eff.c[which(sed.eff.c$Type == "BD"), 3], 
+					ylab = "", xlab = "",
+				  pch = 22, bg="gray", cex = 1.5,
+					ylim = c(0, 0.15), xlim = c(10, 50), las = 1)
+
+arrows(y0 = sed.bac.c[which(sed.bac.c$Type == "BD"), 9], 
+       x0 = sed.eff.c[which(sed.eff.c$Type == "BD"), 3], 
+       x1 = sed.eff.c[which(sed.eff.c$Type == "BD"), 3] - 
+         sed.eff.c[which(sed.eff.c$Type == "BD"), 4],
+       angle = 90, length=0.1, lwd = 2)
+arrows(y0 = sed.bac.c[which(sed.bac.c$Type == "BD"), 9], 
+       x0 = sed.eff.c[which(sed.eff.c$Type == "BD"), 3], 
+       x1 = sed.eff.c[which(sed.eff.c$Type == "BD"), 3] + 
+         sed.eff.c[which(sed.eff.c$Type == "BD"), 4],
+       angle = 90, length=0.1, lwd = 2)
+
+arrows(x0 = sed.eff.c[which(sed.eff.c$Type == "BD"), 3], 
+       y0 = sed.bac.c[which(sed.bac.c$Type == "BD"), 9], 
+       y1 = sed.bac.c[which(sed.bac.c$Type == "BD"), 9] - 
+         sed.bac.c[which(sed.bac.c$Type == "BD"), 10],
+       angle = 90, length=0.1, lwd = 2)
+arrows(x0 = sed.eff.c[which(sed.eff.c$Type == "BD"), 3], 
+       y0 = sed.bac.c[which(sed.bac.c$Type == "BD"), 9], 
+       y1 = sed.bac.c[which(sed.bac.c$Type == "BD"), 9] + 
+         sed.bac.c[which(sed.bac.c$Type == "BD"), 10],
+       angle = 90, length=0.1, lwd = 2)
+
+points(sed.eff.c[which(sed.eff.c$Type == "BD"), 3],
+       sed.bac.c[which(sed.bac.c$Type == "BD"), 9],
+					ylab = "", xlab = "",
+				  pch = 22, bg="gray", cex = 1.5,)
+
+
+mtext("Phylogenetic Diversity", side = 2, line = 3.5, cex = 1.25)
+mtext("Denitrification Rate", side = 1, line = 2.80, cex = 1.25)
+mtext(side = 1, line = 4,  text = expression(paste("(ng N"[2], "O g"^-1, "sediment hr"^-1, ")")))
+
+dev.off() # sthis writes plot to folder
+graphics.off()
+
+## Show Plot
+img <- readPNG("../figures/PhyloDiversityFunction2.png")
+grid.raster(img)
+
+
+
+
+```
 
 
 
