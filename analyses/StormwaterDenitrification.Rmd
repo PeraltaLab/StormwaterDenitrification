@@ -215,6 +215,12 @@ diversity <- cbind(design.baseflow,richness,shannon,simp.even,J)
 diversity2 <- diversity[diversity$Storm =="baseflow",]
 baseflow.diversity <- diversity2[diversity2$Location !="A",]
 
+# # ANOVA - update
+aov.bf=aov(richness~Location*Sample_Type,data=baseflow.diversity)
+summary(aov.bf)
+posthocD <-TukeyHSD(aov.bf,"Location:Sample_Type",conf.level=0.95)
+posthocD
+
 # Graphing OTU richness
 p <- ggplot(baseflow.diversity, aes(x=Location, y=richness, color=as.factor(Sample_Type))) + geom_boxplot() +
       geom_point(aes(color=factor(Sample_Type)), size=2, position = position_jitterdodge()) +   
@@ -471,6 +477,48 @@ p + theme_bw() +
 
 ggsave("../figures/baseflow_PD_boxplots.png", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
 ```
+# Sediment Ammonium and Nitrate Plots
+```{r}
+# Import Data - water quality
+WaterSed.chem <- read.delim("../data/TC_WaterSed_ChemDEA.txt")
+WaterSed.chem$Field_replicate <- as.factor(WaterSed.chem$Field_replicate)
+
+Sed.chem <- subset(WaterSed.chem, Sample_Type == "BD" | Sample_Type == "BK")
+dim(Sed.chem) 
+
+p <- ggplot(Sed.chem, aes(x=Location, y=SED.NH4.N.ug.N.g.1.soil, color=as.factor(Sample_Type))) + geom_boxplot() +
+      geom_point(aes(color=factor(Sample_Type)), size=2, position = position_jitterdodge()) +   
+      scale_color_manual(name="Location", 
+                         values=c("brown", "orange"), 
+                         labels = c("stream bed", "stream bank")) 
+n1 <- p + theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line =element_line(colour = "black")) + theme(axis.title=element_text(vjust=1,size=14,face="bold"), axis.text=element_text(size=14), axis.text.x = element_text(vjust=0.65, hjust=0.5, size=14), panel.border = element_rect(colour = "black",size=1)) + theme(axis.ticks.length=unit(0.3,"cm")) + labs(x = "", y = (expression(paste("Ammonium-N (",mu,"g NH"[4]^+{},"-N"," g"^-{1},"soil)")))) + theme(strip.text.x = element_text(size=14, face="bold"), strip.text.y = element_text(size=14, face="bold"), strip.background = element_rect(colour="black", fill="white", size=1)) + scale_x_discrete(breaks=c("B", "C", "D"), labels=c("downstream (B)", "middle (C)", "upstream (D)"))
+
+p2 <- ggplot(Sed.chem, aes(x=Location, y=SED.NO3.N.ug.N.g.1.soil, color=as.factor(Sample_Type))) + geom_boxplot() +
+      geom_point(aes(color=factor(Sample_Type)), size=2, position = position_jitterdodge()) +   
+      scale_color_manual(name="Location", 
+                         values=c("brown", "orange"), 
+                         labels = c("stream bed", "stream bank")) 
+n2 <- p2 + theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.line =element_line(colour = "black")) + theme(axis.title=element_text(vjust=1,size=14,face="bold"), axis.text=element_text(size=14), axis.text.x = element_text(vjust=0.65, hjust=0.5, size=14), panel.border = element_rect(colour = "black",size=1)) + theme(axis.ticks.length=unit(0.3,"cm")) + labs(x = "Location", y = (expression(paste("Nitrate-N (",mu,"g NO"[3]^-{},"-N"," g"^-{1},"soil)")))) + theme(strip.text.x = element_text(size=14, face="bold"), strip.text.y = element_text(size=14, face="bold"), strip.background = element_rect(colour="black", fill="white", size=1)) + scale_x_discrete(breaks=c("B", "C", "D"), labels=c("downstream (B)", "middle (C)", "upstream (D)"))
+
+#combine plots
+library("ggpubr")
+library("cowplot") #combining plots
+
+# remove legends and axes
+n1 <-n1 + theme(legend.position="right", legend.box = "horizontal")+ rremove("x.text")+ theme(legend.text=element_text(size=14),legend.title=element_text(size=14))
+n2 <- n2 + theme(legend.position="right")+ theme(legend.text=element_text(size=14),legend.title=element_text(size=14))
+
+# align all plots vertically
+plots <- align_plots(n1,n2, align = 'v', axis = 'l')
+
+# combine moisture N process graphs
+n3 <- plot_grid(plots[[1]],plots[[2]], labels = c("A","B"), label_size = 16, ncol=1, align='v')
+n3        
+ggsave("../figures/SedN.png", plot=last_plot(), device=NULL, path=NULL, scale=1,  width=8, height=10, dpi=300, limitsize=TRUE)
+
+
+#ggsave("../figures/baseflow_ammonium_boxplots.png", plot=last_plot(), device=NULL, path=NULL, scale=1, width=7, height=5, dpi=300, limitsize=TRUE)
+```
 
 ## Denitrification
 ```{r}
@@ -714,6 +762,12 @@ basestorm.diversity <- cbind(design_final,richness.w,shannon.w,simp.even.w,J.w)
 
 #Plot OTU richness - basestorm - water
 ```{r Plot - OTU richness, echo=TRUE}
+# # ANOVA - update
+aov.bfsf=aov(richness.w~Location*Storm,data=basestorm.diversity)
+summary(aov.bfsf)
+posthocD <-TukeyHSD(aov.bfsf,"Location:Storm",conf.level=0.95)
+posthocD
+
 # Graphing OTU richness
 p <- ggplot(basestorm.diversity, aes(x=Location, y=richness.w, color=as.factor(Storm))) + geom_boxplot() +
       geom_point(aes(color=factor(Storm)), size=2, position = position_jitterdodge()) +   
@@ -857,15 +911,21 @@ for(i in 1:length(rownames(design.w.r))){
 #bfsf.bac.c <- as.data.frame(bfsf.bac.c)
 #bfsf.bac.m <- as.data.frame(bfsf.bac.m)
 
-# # ANOVA - update
-aov.wtr=aov(S~Location,data=bfsf.bac)
+# # ANOVA - update - used code above richness.w (not-rarefied)
+aov.wtr=aov(S~Location*Time, data=bfsf.bac)
 summary(aov.wtr)
-posthocD <-TukeyHSD(aov.wtr,"Location",conf.level=0.95)
+posthocD <-TukeyHSD(aov.wtr,"Location:Time",conf.level=0.95)
 posthocD
 ```
 
 # Phylo Diversity Plots
 ```{r}
+# # ANOVA - update
+aov.wtr.PD=aov(Phylo~Location*Time, data=bfsf.bac)
+summary(aov.wtr.PD)
+posthocD <-TukeyHSD(aov.wtr.PD,"Location:Time",conf.level=0.95)
+posthocD
+
 #boxplots
 p <- ggplot(bfsf.bac, aes(x=Location, y=Phylo, color=as.factor(Time))) + geom_boxplot() +
       geom_point(aes(color=factor(Time)), size=2, position = position_jitterdodge()) +   
