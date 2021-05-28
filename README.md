@@ -31,8 +31,8 @@ For information regarding the project, please visit: (update when manuscript is 
 
 ## Contributors
 
-[Dr. Ariane Peralta](https://www.peraltalab.com): Assistant Professor, Department of Biology, East Carolina University. Principal Investigator of the [Peralta Lab](http://www.peraltalab.com)
+[Dr. Ariane Peralta](https://www.peraltalab.com): Associate Professor, Department of Biology, East Carolina University. Principal Investigator of the [Peralta Lab](http://www.peraltalab.com)
 
-[Dr. Mario Muscarella](http://mmuscarella.github.io/): Postdoc in the [del Giorgio Lab](http://www.gril.uqam.ca/del_Giorgio.html) at Université du Quebéc à Montréal
+[Dr. Mario Muscarella](http://mmuscarella.github.io/): Assistant Professor, Institute or Arctic Biology, University of Alaska Fairbanks. Principal Investigator of the Muscarella Lab.
 
 [Dr. Eban Z. Bean](https://abe.ufl.edu/people/bean-eban/): Assistant Professor, Department of Agricultural and Biological Engineering, University of Florida.
